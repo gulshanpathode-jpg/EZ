@@ -422,6 +422,21 @@
     return cut || raw;
   }
 
+  // ---------- work code ----------
+  // The page title span holds e.g.
+  //   "Cyprexx Occupancy Verification Inspection  (4606603)"
+  // Return the inspection name with the trailing parenthetical (an id, and
+  // possibly other numbers) stripped and whitespace trimmed. If there's no
+  // parenthetical at all, just return the trimmed title as-is.
+  function scrapeWorkCode() {
+    const span = document.getElementById("Main_LabelTitle");
+    if (!span) return null;
+    const raw = text(span);
+    if (!raw) return null;
+    const cut = raw.split(/\s*\(/)[0].trim();
+    return cut || raw;
+  }
+
   // The job identifier is the Work Order number shown on the page
   // (span#Main_LabelWorkOrder), e.g. "13519930". Fall back to the URL's Id=
   // param if the label isn't present yet (form still rendering / older layout).
@@ -556,6 +571,7 @@
         jobId,
         url: location.href,
         address: scrapeAddress(),
+        workCode: scrapeWorkCode(),
         completedDate: (completedDate() || {}).raw || null,
         ...scrapeQuestions(),
         photos: scrapePhotos(),
