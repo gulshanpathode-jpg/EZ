@@ -1,0 +1,5 @@
+node_modules
+
+# Real inspection data captured at runtime - not committed
+uploads/
+logs/

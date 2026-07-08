@@ -1,0 +1,140 @@
+{
+  "info": {
+    "_postman_id": "8f3c1d52-7a4b-4e9c-9b21-ez0verifier01",
+    "name": "EZ Inspections AI Verifier API",
+    "description": "Backend API for the EZ Inspections AI Verifier Chrome extension.\n\nBase URL is the `{{baseUrl}}` collection variable (defaults to http://localhost:3000).\n\nEndpoints:\n- GET  /health                         -> { ok: true }\n- POST /api/inspections/verify         (multipart/form-data) -> { result_id, answers: [...] }\n- POST /api/inspections/feedback       (application/json)    -> { ok: true }\n\nVERIFY request (multipart/form-data):\n- `payload` (text): JSON string { jobId, sections[], photos:[{id,category}] }\n- `images` (file, repeated): the binary images. Each file MUST be named `<id>.<ext>` (id = the photo's image id), so the backend maps the bytes back to photos[].id. In Postman, rename your test image to e.g. 958095971.jpg before selecting it.\n\nFEEDBACK request (application/json): the operator's Accept/Reject decisions, tied to a verify run via result_id.\n\nThe backend logs every request: verify input -> backend/logs/input/, verify output -> backend/logs/output/, feedback -> backend/logs/feedback/.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] },
+        "description": "Liveness check. Returns { ok: true } when the backend is up."
+      },
+      "response": []
+    },
+    {
+      "name": "Verify inspection",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 200\", function () { pm.response.to.have.status(200); });",
+              "var json = pm.response.json();",
+              "pm.test(\"has result_id\", function () { pm.expect(json).to.have.property('result_id'); });",
+              "pm.test(\"has answers array\", function () { pm.expect(json.answers).to.be.an('array'); });",
+              "pm.test(\"each answer has questionId + aiAnswer\", function () {",
+              "  json.answers.forEach(function (a) {",
+              "    pm.expect(a).to.have.property('questionId');",
+              "    pm.expect(a).to.have.property('aiAnswer');",
+              "  });",
+              "});",
+              "// Save result_id so the Feedback request can reuse it.",
+              "if (json.result_id) pm.collectionVariables.set('resultId', json.result_id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "payload",
+              "value": "{\"jobId\":\"330882809\",\"sections\":[{\"header\":\"Gain Access\",\"questions\":[{\"id\":\"21_StreetSign\",\"text\":\"Is Street Sign Present?\",\"type\":\"radio\",\"options\":[\"Yes\",\"No\"],\"currentAnswer\":\"Yes\"},{\"id\":\"22_HouseNumber\",\"text\":\"Is House Number Visible?\",\"type\":\"radio\",\"options\":[\"Yes\",\"No\"],\"currentAnswer\":\"No\"}]}],\"photos\":[{\"id\":\"958095971\",\"category\":\"Street Scene\"}]}",
+              "type": "text",
+              "description": "JSON string: { jobId, sections[], photos:[{id,category}] }. photos carry only the image id + category; the extension rebuilds image URLs from the id."
+            },
+            {
+              "key": "images",
+              "type": "file",
+              "src": null,
+              "description": "Binary image, repeated. The file's NAME must be '<id>.<ext>' (e.g. 958095971.jpg) so the backend maps the bytes to photos[].id. Add one 'images' file row per photo. In Postman, rename the file on disk to <id>.jpg first."
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/inspections/verify",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "inspections", "verify"]
+        },
+        "description": "Scrape -> verify. multipart/form-data with a `payload` JSON text field plus repeated `images` file fields named '<id>.<ext>'.\n\nResponse: { result_id, answers: [ { questionId, aiAnswer, referenceImages: [ { id, category } ] } ] }"
+      },
+      "response": [
+        {
+          "name": "Example response (mock backend)",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "formdata", "formdata": [] },
+            "url": { "raw": "{{baseUrl}}/api/inspections/verify", "host": ["{{baseUrl}}"], "path": ["api", "inspections", "verify"] }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+          "cookie": [],
+          "body": "{\n  \"result_id\": \"2026-06-29T14-30-05-123Z__job-330882809__a1b2\",\n  \"answers\": [\n    {\n      \"questionId\": \"21_StreetSign\",\n      \"aiAnswer\": \"No\",\n      \"referenceImages\": [\n        { \"id\": \"958095971\", \"category\": \"Street Scene\" }\n      ]\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Send feedback",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"ok true\", function () { pm.expect(pm.response.json().ok).to.eql(true); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "options": { "raw": { "language": "json" } },
+          "raw": "{\n  \"result_id\": \"{{resultId}}\",\n  \"jobId\": \"330882809\",\n  \"feedback\": [\n    {\n      \"questionId\": \"21_StreetSign\",\n      \"section\": \"Gain Access\",\n      \"question\": \"Is Street Sign Present?\",\n      \"currentAnswer\": \"Yes\",\n      \"aiAnswer\": \"No\",\n      \"decision\": \"accept\",\n      \"finalAnswer\": \"No\"\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/inspections/feedback",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "inspections", "feedback"]
+        },
+        "description": "The operator's Accept/Reject decisions for a verify run.\n\nBody (application/json): { result_id, jobId, feedback: [ { questionId, section, question, currentAnswer, aiAnswer, decision: 'accept'|'reject'|'matched', finalAnswer } ] }.\n\n`result_id` is auto-filled from the last Verify response via the {{resultId}} variable. Returns { ok: true }."
+      },
+      "response": [
+        {
+          "name": "Example response",
+          "originalRequest": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": { "raw": "{{baseUrl}}/api/inspections/feedback", "host": ["{{baseUrl}}"], "path": ["api", "inspections", "feedback"] }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+          "cookie": [],
+          "body": "{\n  \"ok\": true\n}"
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "resultId", "value": "", "type": "string" }
+  ]
+}
