@@ -21,7 +21,7 @@
 
 
   // Inject the flash stylesheet once. The highlight is a yellow overlay that
-  // holds for ~2s then fades out, not a persistent box. We use an OVERLAY
+  // holds for ~1.5s then fades out, not a persistent box. We use an OVERLAY
   // (drawn on top of the element) rather than a CSS background: a background
   // tint on the FieldGroup table is hidden behind the cells' own opaque
   // backgrounds, but a translucent overlay always shows.
@@ -37,7 +37,7 @@
         border-radius: 4px;
         background: rgba(250, 204, 21, 0.55);
         box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.45);
-        animation: ez-verifier-flash-fade 2s ease-out forwards;
+        animation: ez-verifier-flash-fade 1.5s ease-out forwards;
       }
       @keyframes ez-verifier-flash-fade {
         0%   { opacity: 0; }
@@ -76,6 +76,11 @@
   // Flash a translucent yellow box over the question, then remove it. Anchored
   // to the document (rect + scroll offset) so it sits over the target.
   function flashHighlight(target) {
+    // Only ever one overlay at a time. Each overlay is translucent, so clicking
+    // repeatedly would otherwise stack layers that compound into an ever-darker
+    // box that hides the question. Removing any in-flight overlay first keeps
+    // the yellow a single, consistent shade no matter how many times you click.
+    document.querySelectorAll(".ez-verifier-flash").forEach((el) => el.remove());
     const rect = target.getBoundingClientRect();
     const flash = document.createElement("div");
     flash.className = "ez-verifier-flash";
@@ -85,7 +90,7 @@
     flash.style.height = rect.height + 4 + "px";
     (document.body || document.documentElement).appendChild(flash);
     flash.addEventListener("animationend", () => flash.remove());
-    setTimeout(() => flash.remove(), 2600); // safety net if animationend misses
+    setTimeout(() => flash.remove(), 2000); // safety net if animationend misses
   }
 
   // ---------- helpers ----------

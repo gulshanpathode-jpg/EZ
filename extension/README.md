@@ -64,7 +64,7 @@ button, with progress shown on the status ring:
   reverts the page if the answer had been applied. **Accept all / Reject all**
   act on pending cards only.
 - **Click a card body** to scroll the page to that question, then flash a
-  yellow highlight over it that fades out after ~2s (no persistent box).
+  yellow highlight over it that fades out after ~1.5s (no persistent box).
   Cards stay in page order and keep their place when accepted/rejected.
 - **Reference photos.** When the backend returns `referenceImages` for an
   answer, the card shows them as thumbnails. Click one to open an **in-page
@@ -202,6 +202,15 @@ npm start          # http://localhost:3000
    id), and `referenceImages` returns `{ id, category }` only - the extension
    rebuilds image URLs from the id. `confidence` / `reasoning` are now optional.
    The Sync button greys out after a completed run (↻ resets a job to re-run).
+
+9. **Detection recovers on window focus; steadier click-to-flash.** Detection now
+   also re-runs (debounced) on `chrome.windows.onFocusChanged`. Opening a photo in
+   EZ's own viewer (a separate tab/window) pointed the panel's active-tab query at
+   that page, flipping the card to **NOT SUPPORTED**; returning focus to the job
+   window fired no tab event, so it stayed stuck until a reload. The focus listener
+   recovers it automatically. The click-to-scroll flash now holds ~1.5s (was ~2s)
+   and removes any in-flight overlay before drawing a new one, so repeated clicks
+   no longer stack translucent layers into an ever-darker box over the question.
 
 ---
 

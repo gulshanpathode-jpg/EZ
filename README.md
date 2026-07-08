@@ -76,9 +76,10 @@ can see a mismatch. Replace `mockVerify()` with a real model call.
 The side panel uses a SmartFill-style layout: a left nav rail with **Home**
 (the Sync + review workflow), **Activity** (event log), and **Config**
 (read-only backend endpoints shown masked for reference, full-resolution-image
-toggle, and answer-block colour pickers). Detection runs automatically on open
-and when you switch tabs; the
-toolbar **↻** button re-detects on demand.
+toggle, and answer-block colour pickers). Detection runs automatically on open,
+when you switch tabs, and when a browser window regains focus (so viewing a
+photo in EZ's own viewer and closing it recovers to **SUPPORTED** without a
+reload); the toolbar **↻** button re-detects on demand.
 
 ## Request / response contract
 
