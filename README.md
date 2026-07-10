@@ -108,6 +108,17 @@ reload); the toolbar **↻** button re-detects on demand.
 - `work_code` is resolved by matching the page title against a known list of
   inspection types (case-insensitive, substring match so leading/trailing words
   and the trailing `(id)` are ignored). If none match, `work_code` is `null`.
+  The known codes (see `KNOWN_WORK_CODES` in `extension/content.js`):
+  - `Cyprexx Occupancy Verification Inspection`
+  - `Cyprexx Aspen Grove V2 Property Condition`
+  - `Cyprexx Sales Date Inspection Instructions`
+  - `M&T Door Knock Inspection`
+  - `Foreclosure (Contact)`
+  - `CONTACT INSPECTION`
+  - `Cyprexx Aspen Grove V2 REO`
+  - `Cyprexx Interior/Exterior`
+  - `Vacancy Task`
+  - `NFR-WT2`
 
 **Response** - JSON
 ```json

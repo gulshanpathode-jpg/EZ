@@ -437,11 +437,15 @@
   // consumers can tell the code couldn't be identified.
   const KNOWN_WORK_CODES = [
     "Cyprexx Occupancy Verification Inspection",
-    "Aspen Grove V2 Property Condition -No Contact",
+    "Cyprexx Aspen Grove V2 Property Condition",
     "Cyprexx Sales Date Inspection Instructions",
     "M&T Door Knock Inspection",
     "Foreclosure (Contact)",
     "CONTACT INSPECTION",
+    "Cyprexx Aspen Grove V2 REO",
+    "Cyprexx Interior/Exterior",
+    "Vacancy Task",
+    "NFR-WT2",
   ];
 
   function matchWorkCode(raw) {
