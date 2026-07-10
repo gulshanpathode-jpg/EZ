@@ -105,6 +105,9 @@ reload); the toolbar **↻** button re-detects on demand.
 - `images` (files, repeated): the binary images. **Each file is named
   `<id>.<ext>`** (e.g. `958095971.jpg`) so the backend maps the bytes back to the
   matching `photos[].id`. Photos in the payload carry only `id` + `category`.
+- `work_code` is resolved by matching the page title against a known list of
+  inspection types (case-insensitive, substring match so leading/trailing words
+  and the trailing `(id)` are ignored). If none match, `work_code` is `null`.
 
 **Response** - JSON
 ```json

@@ -89,8 +89,8 @@ const els = {
 // single source of truth for where the extension talks to the AI backend.
 // Feedback is the same base with the last path segment swapped (…/verify →
 // …/feedback). The Config tab only DISPLAYS them (masked), it cannot change them.
-const VERIFY_URL = 'http://164.52.196.182/api/inspections/verify';
-const FEEDBACK_URL = 'http://164.52.196.182/api/inspections/feedback';
+const VERIFY_URL = 'http://101.53.137.140/ez/api/inspections/verify';
+const FEEDBACK_URL = 'http://101.53.137.140/ez/api/inspections/feedback';
 const COLOR_DEFAULTS = { current: '#f8fafc', image: '#ede9fe' };
 const COLOR_VARS = { current: '--cfg-current-bg', image: '--cfg-image-bg' };
 const STORAGE_KEY = 'ezVerifierConfig';
@@ -605,7 +605,7 @@ function persistJobs() {
       .filter(Boolean)
       .map(serializeJob);
     const p = chrome.storage.local.set({ [STORAGE_JOBS_KEY]: { jobs, savedAt: Date.now() } });
-    if (p && p.catch) p.catch(() => {}); // swallow async quota errors
+    if (p && p.catch) p.catch(() => { }); // swallow async quota errors
   } catch (e) { /* storage full / unavailable - non-fatal */ }
 }
 

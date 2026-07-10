@@ -430,16 +430,34 @@
   // ---------- work code ----------
   // The page title span holds e.g.
   //   "Cyprexx Occupancy Verification Inspection  (4606603)"
-  // Return the inspection name with the trailing parenthetical (an id, and
-  // possibly other numbers) stripped and whitespace trimmed. If there's no
-  // parenthetical at all, just return the trimmed title as-is.
+  // We match the title against a known list of work codes. The title may carry
+  // extra words at the front or the end (or a trailing parenthetical id), so we
+  // look for a known code as an exact (case-insensitive) substring. On a match
+  // we return the canonical code; otherwise we return null so downstream
+  // consumers can tell the code couldn't be identified.
+  const KNOWN_WORK_CODES = [
+    "Cyprexx Occupancy Verification Inspection",
+    "Aspen Grove V2 Property Condition -No Contact",
+    "Cyprexx Sales Date Inspection Instructions",
+    "M&T Door Knock Inspection",
+    "Foreclosure (Contact)",
+    "CONTACT INSPECTION",
+  ];
+
+  function matchWorkCode(raw) {
+    if (!raw) return null;
+    const haystack = raw.replace(/\s+/g, " ").trim().toLowerCase();
+    for (const code of KNOWN_WORK_CODES) {
+      const needle = code.replace(/\s+/g, " ").trim().toLowerCase();
+      if (haystack.includes(needle)) return code;
+    }
+    return null;
+  }
+
   function scrapeWorkCode() {
     const span = document.getElementById("Main_LabelTitle");
     if (!span) return null;
-    const raw = text(span);
-    if (!raw) return null;
-    const cut = raw.split(/\s*\(/)[0].trim();
-    return cut || raw;
+    return matchWorkCode(text(span));
   }
 
   // The job identifier is the Work Order number shown on the page
