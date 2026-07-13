@@ -115,7 +115,7 @@ input/output pair is easy to correlate.
 
 | File | Role |
 |------|------|
-| `manifest.json` | MV3 config (v0.2.0). Declares the side panel, the content script (matches `ezinspections.com/inspManager/*`), permissions, and host permissions including `localhost:3000`. |
+| `manifest.json` | MV3 config (v0.2.0). Declares the side panel, the content script (matches `ezinspections.com/inspManager/*`), permissions, and host permissions including the verify host `101.53.137.140` and `localhost:3000`. |
 | `background.js` | Service worker. Opens the side panel on toolbar-icon click, and handles `ENSURE_CONTENT_SCRIPT` - injects `imageModal.js` + `content.js` on demand via `chrome.scripting.executeScript` so pages open before the extension loaded still work without a reload. |
 | `content.js` | The scraper. Reads the job id (the Work Order number from `span#Main_LabelWorkOrder`, falling back to the URL `Id=` param), sections/questions/answers and photos, applies an answer back to the page, scrolls/highlights a question, and opens the image viewer. It also emits `EZ_PAGE_READY` when the job form appears so the panel auto-detects without a manual refresh. Messages in: `DETECT`, `SCRAPE`, `APPLY_ANSWER`, `FOCUS_QUESTION`, `CLEAR_HIGHLIGHT`, `SHOW_IMAGE_MODAL`, `PING`. Guards against double-injection so it's safe to load both via the manifest match and on demand. |
 | `imageModal.js` | On-page full-resolution image viewer (zoom / pan / prev-next / fit / close). Renders on the inspection page so photos load with the session cookies. Exposes `window.EZ_IMAGE_MODAL.show(images, index)`. |

@@ -7,6 +7,7 @@
   "host_permissions": [
     "https://www.ezinspections.com/*",
     "https://ezinspections.com/*",
+    "http://101.53.137.140/*",
     "http://localhost:3000/*"
   ],
   "background": {
