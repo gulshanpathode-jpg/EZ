@@ -44,7 +44,7 @@ button, with progress shown on the status ring:
   `<image-id>.<ext>` so the backend maps bytes back to `photos[].id`, plus a `payload` JSON
   field with all the scraped Q&A and photo metadata.
 - POSTs it to the fixed `VERIFY_URL` constant
-  (`http://164.52.196.182/api/inspections/verify`).
+  (`http://101.53.137.140/ez/api/inspections/verify`).
 - Once the run completes the **Sync & Verify** button **greys out** (label →
   "Verified") so the operator can't re-fire the same job and repeat the API call.
   Use the **↻** button to reset the active job and deliberately re-run.
