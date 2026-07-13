@@ -415,7 +415,7 @@ function renderPhotoDates(pd, jobId) {
       : '';
     flag.className = 'photodates-flag is-ok';
     flag.innerHTML =
-      `<div class="photodates-msg">${iconCheck()}<span>Okay — all ` +
+      `<div class="photodates-msg">${iconCheck()}<span>Okay - all ` +
       `${pd.withDate} photo date${pd.withDate === 1 ? '' : 's'} match Completed Date Time ` +
       `(${escapeHtml(day)})${escapeHtml(extra)}</span></div>`;
     return;
@@ -445,7 +445,7 @@ function renderPhotoDates(pd, jobId) {
   flag.innerHTML =
     `<div class="photodates-msg">${iconX()}<span><strong>${stale.length}</strong> photo` +
     `${stale.length === 1 ? '' : 's'} not taken on Completed Date Time ` +
-    `(${escapeHtml(day)}) — check the pinned image${stale.length === 1 ? '' : 's'} below.</span></div>` +
+    `(${escapeHtml(day)}) - check the pinned image${stale.length === 1 ? '' : 's'} below.</span></div>` +
     `<div class="stale-thumbs">${items}</div>`;
 
   hydrateStaleThumbs(stale, jobId);
