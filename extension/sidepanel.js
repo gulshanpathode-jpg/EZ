@@ -74,6 +74,7 @@ const els = {
   cfgVerifyUrl: $('cfg-verify-url'),
   cfgFeedbackUrl: $('cfg-feedback-url'),
   cfgFullRes: $('cfg-fullres'),
+  cfgDark: $('cfg-dark'),
   cfgColorCurrent: $('cfg-color-current'),
   cfgColorImage: $('cfg-color-image'),
   swatchCurrent: $('swatch-current'),
@@ -91,7 +92,7 @@ const els = {
 // …/feedback). The Config tab only DISPLAYS them (masked), it cannot change them.
 const VERIFY_URL = 'http://101.53.137.140/ez/api/inspections/verify';
 const FEEDBACK_URL = 'http://101.53.137.140/ez/api/inspections/feedback';
-const COLOR_DEFAULTS = { current: '#f8fafc', image: '#ede9fe' };
+const COLOR_DEFAULTS = { current: '#f6f7fb', image: '#fbe9fe' };
 const COLOR_VARS = { current: '--cfg-current-bg', image: '--cfg-image-bg' };
 const STORAGE_KEY = 'ezVerifierConfig';
 const STORAGE_JOBS_KEY = 'ezVerifierJobs'; // persisted review queues + decisions
@@ -111,7 +112,7 @@ const state = {
   apiStartMs: 0,
   pipelinePageKey: null, // job-id key the current queue belongs to (see pageKeyFor)
   activity: [],
-  config: { fullRes: true, colors: { ...COLOR_DEFAULTS } },
+  config: { fullRes: true, theme: 'light', colors: { ...COLOR_DEFAULTS } },
 };
 
 const STATUS_DESCRIPTIONS = {
@@ -1524,6 +1525,19 @@ els.btnClearLog.addEventListener('click', () => {
 // 14. Config (backend URL, full-res, answer-block colours) + persistence
 // ═════════════════════════════════════════════════════════════════════
 
+// Light is the default; dark is opt-in. Setting data-theme="dark" on <html>
+// activates the :root[data-theme="dark"] rules in the stylesheet. The
+// localStorage mirror lets the inline <head> script apply the theme before
+// first paint (no flash) on the next open.
+function applyTheme() {
+  const dark = state.config.theme === 'dark';
+  const root = document.documentElement;
+  if (dark) root.setAttribute('data-theme', 'dark');
+  else root.removeAttribute('data-theme');
+  try { localStorage.setItem('sf-theme', dark ? 'dark' : 'light'); } catch (e) { /* non-fatal */ }
+  if (els.cfgDark) els.cfgDark.checked = dark;
+}
+
 function applyColors() {
   const root = document.documentElement;
   for (const key of Object.keys(COLOR_VARS)) {
@@ -1556,6 +1570,7 @@ async function loadConfig() {
     if (saved) {
       state.config = {
         fullRes: saved.fullRes !== false,
+        theme: saved.theme === 'dark' ? 'dark' : 'light',
         colors: { ...COLOR_DEFAULTS, ...(saved.colors || {}) },
       };
     }
@@ -1565,6 +1580,7 @@ async function loadConfig() {
   if (els.cfgVerifyUrl) els.cfgVerifyUrl.value = maskUrl(VERIFY_URL);
   if (els.cfgFeedbackUrl) els.cfgFeedbackUrl.value = maskUrl(FEEDBACK_URL);
   els.cfgFullRes.checked = state.config.fullRes;
+  applyTheme();
   applyColors();
 }
 
@@ -1572,6 +1588,13 @@ els.cfgFullRes.addEventListener('change', () => {
   state.config.fullRes = els.cfgFullRes.checked;
   saveConfig();
 });
+if (els.cfgDark) {
+  els.cfgDark.addEventListener('change', () => {
+    state.config.theme = els.cfgDark.checked ? 'dark' : 'light';
+    applyTheme();
+    saveConfig();
+  });
+}
 els.cfgColorCurrent.addEventListener('input', () => {
   state.config.colors.current = els.cfgColorCurrent.value;
   applyColors();

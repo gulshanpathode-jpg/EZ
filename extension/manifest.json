@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Smart Fill - EZ inspections",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "description": "Scrapes inspection Q&A + labeled photos, verifies answers with AI, and highlights matches/mismatches.",
   "permissions": ["sidePanel", "activeTab", "scripting", "storage", "unlimitedStorage", "tabs"],
   "host_permissions": [
