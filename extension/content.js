@@ -238,10 +238,14 @@
 
   // ---------- scraping photos ----------
 
+  // Thumbnails look like .../I330890154/thumbnail/<file>.jpg?_dt=...  Dropping
+  // the "/thumbnail" segment names the full-size file, but that file only
+  // EXISTS once EZ has generated it, which it does lazily the first time the
+  // photo is opened through JobPictureViewer.aspx / downloadUtil.aspx. Until
+  // then this URL 404s, so it is only a fallback: resolveSourceUrl() drives the
+  // viewer flow that generates the file and returns its real URL.
   function fullResFromThumb(url) {
     if (!url) return url;
-    // Thumbnails look like .../I330890154/thumbnail/<file>.jpg?_dt=...
-    // Full-res is the same path WITHOUT the "/thumbnail" segment.
     return url.replace("/thumbnail/", "/");
   }
 
