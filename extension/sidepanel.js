@@ -482,7 +482,7 @@ els.photoDatesFlag.addEventListener('click', (e) => {
   const stale = (pd && pd.stale) || [];
   if (!stale.length) return;
   const gallery = stale
-    .map((p) => ({ full: p.fullResUrl || p.thumbnailUrl, thumb: p.thumbnailUrl }))
+    .map((p) => ({ full: p.fullResUrl || p.thumbnailUrl, thumb: p.thumbnailUrl, picture: p.pictureUrl || '' }))
     .filter((g) => g.full || g.thumb);
   openImageOnPage(gallery, Math.max(0, Number(btn.dataset.idx) || 0));
 });
@@ -671,10 +671,33 @@ function setSyncButton(label, disabled) {
 // 7. Image fetching (evidence for the verify call)
 // ═════════════════════════════════════════════════════════════════════
 
+// Resolve the true full-size image URL from the photo's JobPictureViewer.aspx
+// page. The static full-res guess (thumbnail URL minus /thumbnail/) 404s on EZ
+// servers that store photos under /tmpfiles/ - there the real image is served
+// by utility/downloadUtil.aspx with a per-session key that only appears on the
+// picture-detail page. Cached on the photo as sourceUrl, which the reference
+// thumbnails also prefer when rendering.
+async function resolveSourceUrl(photo) {
+  if (!photo || !photo.pictureUrl) return null;
+  if (photo.sourceUrl) return photo.sourceUrl;
+  try {
+    const resp = await fetch(photo.pictureUrl, { credentials: 'include' });
+    if (!resp.ok) return null;
+    const doc = new DOMParser().parseFromString(await resp.text(), 'text/html');
+    const pic = doc.getElementById('Main_Picture');
+    const src = pic && pic.getAttribute('src');
+    if (!src) return null;
+    photo.sourceUrl = new URL(src, resp.url || photo.pictureUrl).href;
+    return photo.sourceUrl;
+  } catch (e) {
+    return null;
+  }
+}
+
 // Fetch one image URL into a Blob. Tries full-res, falls back to thumbnail.
 async function fetchImageBlob(photo, useFullRes) {
   const candidates = useFullRes
-    ? [photo.fullResUrl, photo.thumbnailUrl]
+    ? [await resolveSourceUrl(photo), photo.fullResUrl, photo.thumbnailUrl]
     : [photo.thumbnailUrl, photo.fullResUrl];
 
   for (const url of candidates) {
@@ -1189,23 +1212,25 @@ function renderReferences(entry) {
       ref.url ||
       '';
     const full =
-      (photo && (photo.fullResUrl || photo.sourceUrl)) ||
+      (photo && (photo.sourceUrl || photo.fullResUrl)) ||
       ref.url ||
       thumb;
     // The on-page viewer runs in the page context, where the panel's blob: URLs
     // are invalid - so give it the real network thumbnail URL to fall back to
-    // when the guessed full-res URL 404s (EZ generates full-size images lazily).
+    // when the guessed full-res URL 404s, plus the picture-detail page URL so
+    // it can resolve the true full-size image (see resolveSourceUrl).
     const thumbNet = (photo && photo.thumbnailUrl) || ref.url || '';
+    const picture = (photo && photo.pictureUrl) || '';
     const label = ref.category || (photo && photo.label) || ref.label || 'Photo';
     const title = label;
 
     if (thumb) {
-      return `<button class="ref-thumb" data-full="${escapeHtml(full)}" data-thumb="${escapeHtml(thumbNet)}" title="${escapeHtml(title)}">
+      return `<button class="ref-thumb" data-full="${escapeHtml(full)}" data-thumb="${escapeHtml(thumbNet)}" data-picture="${escapeHtml(picture)}" title="${escapeHtml(title)}">
         <img src="${escapeHtml(thumb)}" alt="${escapeHtml(label)}" loading="lazy" />
       </button>`;
     }
     // No displayable image - fall back to a text pill that still opens the URL.
-    return `<button class="source-photo-link" data-full="${escapeHtml(full)}" data-thumb="${escapeHtml(thumbNet)}">${escapeHtml(label)}</button>`;
+    return `<button class="source-photo-link" data-full="${escapeHtml(full)}" data-thumb="${escapeHtml(thumbNet)}" data-picture="${escapeHtml(picture)}">${escapeHtml(label)}</button>`;
   }).join('');
 
   return `
@@ -1260,7 +1285,7 @@ els.suggestionList.addEventListener('click', (e) => {
       ? Array.from(listEl.querySelectorAll('.ref-thumb, .source-photo-link'))
       : [ref];
     const gallery = items
-      .map((b) => ({ full: b.dataset.full, thumb: b.dataset.thumb }))
+      .map((b) => ({ full: b.dataset.full, thumb: b.dataset.thumb, picture: b.dataset.picture || '' }))
       .filter((g) => g.full || g.thumb);
     openImageOnPage(gallery, Math.max(0, items.indexOf(ref)));
     return;

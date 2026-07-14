@@ -10,7 +10,9 @@
 // (⤢ button or 0 key), and close (✕ button, Esc key, or backdrop click).
 //
 // Exposes window.EZ_IMAGE_MODAL.show(images, startIndex), where `images` is a
-// URL string or an array of URL strings (the gallery).
+// URL string, a { full, thumb, picture } object, or an array of either (the
+// gallery). `picture` is the photo's JobPictureViewer.aspx URL, used to resolve
+// the true full-size image when the guessed full-res URL does not exist.
 
 (() => {
   // Guard against double-injection (manifest match + on-demand executeScript).
@@ -23,6 +25,7 @@
   let root = null, imgEl = null, counterEl = null;
   let gallery = [];
   let index = 0;
+  let loadToken = 0;
   let scale = 1, tx = 0, ty = 0;
   let dragging = false, startX = 0, startY = 0, baseTx = 0, baseTy = 0;
 
@@ -137,19 +140,54 @@
     apply();
   }
 
-  function load() {
-    resetView();
-    // Gallery items are either a URL string or { full, thumb }. Try the full-res
-    // URL first; if it fails to load - e.g. EZ hasn't generated the full-size
-    // file yet (it does so lazily on first view) - fall back to the thumbnail,
-    // which always exists, so the viewer never shows a blank image.
-    const item = gallery[index];
-    const full = typeof item === 'string' ? item : (item && item.full) || '';
-    const thumb = item && typeof item === 'object' ? item.thumb || '' : '';
-    imgEl.onerror = (thumb && thumb !== full)
+  // The static full-res guess (thumbnail URL minus /thumbnail/) 404s on EZ
+  // servers that store photos under /tmpfiles/ - there the real full-size image
+  // is only served by utility/downloadUtil.aspx with a per-session key that
+  // appears on the photo's JobPictureViewer.aspx page. Fetch that page (same
+  // origin, session cookie rides along) and read img#Main_Picture's src.
+  // The resolved URL is cached on the gallery item for revisits.
+  async function resolveFull(item) {
+    if (!item || typeof item !== 'object' || !item.picture) return null;
+    if (item.resolved) return item.resolved;
+    try {
+      const resp = await fetch(item.picture, { credentials: 'include' });
+      if (!resp.ok) return null;
+      const doc = new DOMParser().parseFromString(await resp.text(), 'text/html');
+      const pic = doc.getElementById('Main_Picture');
+      const src = pic && pic.getAttribute('src');
+      if (!src) return null;
+      item.resolved = new URL(src, resp.url || item.picture).href;
+      return item.resolved;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function setSrc(url, thumb) {
+    imgEl.onerror = (thumb && thumb !== url)
       ? () => { imgEl.onerror = null; imgEl.src = thumb; }
       : null;
-    imgEl.src = full || thumb || '';
+    imgEl.src = url;
+  }
+
+  function load() {
+    resetView();
+    // Gallery items are either a URL string or { full, thumb, picture }. Show
+    // the best URL we already have (full-res guess, thumbnail fallback on
+    // error), then resolve the true full-size URL from the picture-detail page
+    // in the background and swap it in - the guessed full-res URL 404s on some
+    // EZ servers, where the old behavior silently left the thumbnail up.
+    const item = gallery[index];
+    const token = ++loadToken;
+    const full = typeof item === 'string' ? item : (item && (item.resolved || item.full)) || '';
+    const thumb = item && typeof item === 'object' ? item.thumb || '' : '';
+    setSrc(full || thumb || '', thumb);
+    if (item && typeof item === 'object' && item.picture && !item.resolved) {
+      resolveFull(item).then((url) => {
+        if (!url || url === full || token !== loadToken || !root) return;
+        setSrc(url, thumb);
+      });
+    }
     counterEl.textContent = `${index + 1} / ${gallery.length}`;
     const single = gallery.length <= 1;
     root.querySelector(`.${NS}-prev`).disabled = single;
